@@ -9,8 +9,8 @@ const { config } = require("./config");
 const app = express();
 
 // Agregamos las variables de timpo en segundos
-const THIRTY_DAYS_IN_SEC = 2592000;
-const TWO_HOURS_IN_SEC = 7200;
+const THIRTY_DAYS_IN_SEC = 2592000000;
+const TWO_HOURS_IN_SEC = 7200000;
 
 // body parser
 app.use(express.json());
@@ -70,9 +70,48 @@ app.post("/auth/sign-up", async function(req, res, next) {
 
 app.get("/movies", async function(req, res, next) {});
 
-app.post("/user-movies", async function(req, res, next) {});
+app.post("/user-movies", async function(req, res, next) {
+  try {
+    const { body: userMovie } = req;
+    const { token } = req.cookies;
 
-app.delete("/user-movies/:userMovieId", async function(req, res, next) {});
+    const { data, status } = await axios({
+      url: `${config.apiUrl}/api/user-movies`,
+      headers: { Authorization: `Bearer ${token}` },
+      method: "post",
+      data: userMovie
+    });
+
+    if (status !== 201) {
+      return next(boom.badImplementation());
+    }
+
+    res.status(201).json(data);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.delete("/user-movies/:userMovieId", async function(req, res, next) {
+  try {
+    const { userMovieId } = req.params;
+    const { token } = req.cookies;
+
+    const { data, status } = await axios({
+      url: `${config.apiUrl}/api/user-movies/${userMovieId}`,
+      headers: { Authorization: `Bearer ${token}` },
+      method: "delete"
+    });
+
+    if (status !== 200) {
+      return next(boom.badImplementation());
+    }
+
+    res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
+});
 
 app.listen(config.port, function() {
   console.log(`Listening http://localhost:${config.port}`);
